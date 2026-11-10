@@ -148,7 +148,7 @@ def project_state(source, geometry, destination, side='auto', proton_mass=1.6726
 
 def project_neutrals(source, base, destination, keep_upper):
     """Copy the kept half of the short virtual-neutral record (9 species, 5 moments per triangle) with parity."""
-    mapping = np.array(json.loads((base/'mesh_generation.json').read_text())['triangle_reflection_zero_based'])
+    mapping = np.loadtxt(base/'triangle_reflection.txt', dtype=int)
     tok = (base/'fort.33').read_text().split()
     nv = int(tok[0]); r = np.array(tok[1:1+nv], float); z = np.array(tok[1+nv:1+2*nv], float)
     tri = (base/'fort.34').read_text().split()

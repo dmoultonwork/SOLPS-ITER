@@ -13,7 +13,7 @@ import numpy as np
 from scipy.io import FortranFile
 
 def project(source,geometry,destination):
- mapping=np.array(json.loads((geometry/'mesh_generation.json').read_text())['triangle_reflection_zero_based'])
+ mapping=np.loadtxt(geometry/'triangle_reflection.txt',dtype=int)
  with FortranFile(source,'r') as f:a=f.read_reals(np.float64)
  nc=a.size//45;assert nc==len(mapping)+6 and a.size==45*nc
  m=np.r_[mapping,np.arange(len(mapping),nc)];assert np.array_equal(m[m],np.arange(nc))

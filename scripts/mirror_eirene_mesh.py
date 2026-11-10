@@ -254,6 +254,8 @@ def generate(original, old_geometry, new_geometry, output):
               'vertex_reflection_zero_based': vertex_map,
               'triangle_reflection_zero_based': list(range(len(half), 2*len(half)))+list(range(len(half)))}
     (output/'mesh_generation.json').write_text(json.dumps(report, indent=2)+'\n')
+    # Reflection map of the Eirene cells (zero-based, one index per line), read by the neutral-restart tools.
+    (output/'triangle_reflection.txt').write_text(''.join('%d\n' % i for i in report['triangle_reflection_zero_based']))
     print(json.dumps({k: v for k, v in report.items() if not isinstance(v, list)}, indent=2))
 
 

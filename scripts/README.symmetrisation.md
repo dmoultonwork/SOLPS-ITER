@@ -9,6 +9,11 @@ The Eirene input is the usual formatted input file (`fort.1`).
 
 Typical order:
 
+0. `find_reflection_blocks.py b2fgmtry`: read-only. Checks that the grid is a connected double null (two cuts at the same
+   radial position, two poloidal blocks) and that each block is its own mirror image to within a tolerance (default a quarter
+   of a cell size), and prints the block endpoints `LO:HI` that the following tools need. It exits with an error if the grid is
+   not suitable, because there is then no point in symmetrising it. The classification follows the B2.5 cut conventions and
+   was checked on STEP grids only.
 1. `audit_b2_reflection.py b2fgmtry LO:HI [LO:HI ...]`: read-only check of how far an existing `b2fgmtry` is from exact
    mirror symmetry for the given logical reflection blocks (inclusive guard-cell endpoints in x).
 2. `symmetrise_carre.py --block LO:HI source.geo destination.geo`: write a reflected CARRE `.geo` input. Then regenerate
@@ -51,8 +56,14 @@ should be generalised before the tools are used for other species sets.
 
 File names are illustrative. `old/` is the original case (`b2fgmtry`, `fort.33`/`fort.34`/`fort.35`, the formatted Eirene input
 `fort.1`, a `b2fstate`, a `fort.13` and `b2.boundary.parameters`); `new/` receives the symmetric case. `LO1:HI1` and `LO2:HI2`
-are the inclusive guard-cell endpoints in x of the two blocks that are mirror images of each other (together they must cover
--1..nx).
+are the inclusive guard-cell endpoints in x of the two mirror blocks (together they must cover -1..nx); step 0 finds them.
+
+0. Is the grid a connected double null, and which are the blocks?
+
+       find_reflection_blocks.py old/b2fgmtry
+
+   It prints, for example for the STEP grid, `poloidal blocks: -1:72, 73:194`, the topology and the largest mismatch of
+   mirrored cell centres, and suggests the commands of the next steps.
 
 1. How far is the original grid from mirror symmetry?
 

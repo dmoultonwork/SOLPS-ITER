@@ -1,6 +1,7 @@
 # Up-down mirror symmetrisation tools for double-null grids
 
-Python 3 (standard library only) tools used to make a B2.5 grid, its Eirene mesh and the Eirene surface/source inputs
+Python 3 tools (standard library only, except `symmetrise_neutral_restart.py` and `symmetrise_attached_side.py`, which also need
+numpy and scipy) used to make a B2.5 grid, its Eirene mesh and the Eirene surface/source inputs
 exactly mirror symmetric, so that any asymmetry seen later comes from the plasma evolution and not from the grid.
 Developed for the STEP double-null geometry; not yet tested on other grids. Every tool states in its `--help` or
 docstring what it does **not** certify.
@@ -42,3 +43,53 @@ Assumptions to check before use on another case: `audit_boundary_symmetry.py` ex
 neutral species of the STEP restart file, in file order, and the proton mass is the CODATA-2018 value (option
 `--proton-mass` in `symmetrise_state.py`; it must match the mass used by the linked solver). These are STEP-specific and
 should be generalised before the tools are used for other species sets.
+
+## Worked example
+
+File names are illustrative. `old/` is the original case (`b2fgmtry`, `fort.33`/`fort.34`/`fort.35`, the JSON Eirene inputs
+`eirene.input.json`, `eirene_add_surfaces.input.json`, `eirene_physics_model.input.json`, a `b2fstate`, a `fort.13` and
+`b2.boundary.parameters`); `new/` receives the symmetric case. `LO1:HI1` and `LO2:HI2` are the inclusive guard-cell endpoints in x
+of the two blocks that are mirror images of each other (together they must cover -1..nx).
+
+1. How far is the original grid from mirror symmetry?
+
+       audit_b2_reflection.py old/b2fgmtry LO1:HI1 LO2:HI2
+
+2. Reflect the CARRE geometry, then regenerate the B2 geometry with the native `b2ag`. The `b2ag.dat` in `new/` must contain
+   the line `'b2agbs_average_flux' '1'` (this branch of B2.5). Repeat the audit on the new `b2fgmtry`:
+
+       symmetrise_carre.py --block LO1:HI1 --block LO2:HI2 old/case.geo new/case.geo
+       (run b2ag in new/)
+       audit_b2_reflection.py new/b2fgmtry LO1:HI1 LO2:HI2
+
+   On the STEP case this took the corner mismatch from 3e-4 m to 0, the cell-volume mismatch from 4.6% to 3e-14 and the
+   `hx` mismatch from 6.8% to 1e-13.
+
+3. Build the mirrored Eirene mesh (`fort.33`-`fort.35` and `mesh_generation.json`) and audit it. The audit writes the candidate
+   reflected pairs that step 4 reads:
+
+       mirror_eirene_mesh.py --original old --old-b2 old/b2fgmtry --new-b2 new/b2fgmtry --output new/mesh
+       audit_mesh_symmetry.py --b2-geometry new/b2fgmtry --eirene-vertices new/mesh/fort.33 \
+           --eirene-triangles new/mesh/fort.34 --output new/pairing.json
+
+4. Mirror the surface and source coordinates of the JSON Eirene inputs (`reference` is the directory holding the three JSON
+   files):
+
+       symmetrise_eirene_inputs.py old new/pairing.json new/inputs new/mesh
+
+5. Project the restart state and the neutral background onto the symmetric grid (the neutral tool reads
+   `new/mesh/mesh_generation.json`):
+
+       symmetrise_state.py --source old/b2fstate --old-b2 old/b2fgmtry --new-b2 new/b2fgmtry --output new/b2fstati
+       symmetrise_neutral_restart.py old/fort.13 new/mesh new/fort.13
+
+   On the STEP case the species inventories were conserved to 1e-16 and the electron and ion energies exactly.
+
+6. Check the result and the boundary-condition input:
+
+       audit_state_symmetry.py new/b2fstati new/b2fgmtry new/state_audit.json
+       measure_plasma_asymmetry.py new/b2fstati new/b2fgmtry new/asymmetry.json
+       audit_boundary_symmetry.py old/b2.boundary.parameters new/boundary_audit.json
+
+7. Run the case with the new `b2fgmtry` and `fort.30` (from `b2ag`), the mirrored `fort.33`-`fort.35`, the mirrored JSON inputs,
+   `b2fstati` and `fort.13`. The surface and source physics are not certified by these tools: audit them separately.

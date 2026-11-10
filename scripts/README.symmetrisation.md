@@ -38,7 +38,7 @@ Units: B2.5 geometry is in metres, Eirene `fort.33` in centimetres; check units 
 The tools do not copy neutral restart data and do not symmetrise plasma states.
 
 Assumptions to check before use on another case: `audit_boundary_symmetry.py` expects 24 species per boundary entry,
-`symmetrise_neutral_restart.py` hard-codes the masses of the nine virtual neutral species of the STEP case
-(D2, D, ... and the He/Ar atoms and molecules, in that order) and the proton mass is the CODATA-2018 value (option
+`symmetrise_neutral_restart.py` hard-codes the masses (2, 2, 2, 4, 4, 4, 4, 4, 4 proton masses) of the nine virtual
+neutral species of the STEP restart file, in file order, and the proton mass is the CODATA-2018 value (option
 `--proton-mass` in `symmetrise_state.py`; it must match the mass used by the linked solver). These are STEP-specific and
 should be generalised before the tools are used for other species sets.

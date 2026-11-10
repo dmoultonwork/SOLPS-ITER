@@ -39,6 +39,7 @@ Units: B2.5 geometry is in metres, Eirene `fort.33` in centimetres; check units 
 The tools do not copy neutral restart data and do not symmetrise plasma states.
 
 Assumptions to check before use on another case: `audit_boundary_symmetry.py` expects 24 species per boundary entry,
+`symmetrise_eirene_inputs.py` hard-codes the surface label swaps -4 <-> -3 and 5 <-> 6,
 `symmetrise_neutral_restart.py` hard-codes the masses (2, 2, 2, 4, 4, 4, 4, 4, 4 proton masses) of the nine virtual
 neutral species of the STEP restart file, in file order, and the proton mass is the CODATA-2018 value (option
 `--proton-mass` in `symmetrise_state.py`; it must match the mass used by the linked solver). These are STEP-specific and
@@ -65,17 +66,18 @@ of the two blocks that are mirror images of each other (together they must cover
    On the STEP case this took the corner mismatch from 3e-4 m to 0, the cell-volume mismatch from 4.6% to 3e-14 and the
    `hx` mismatch from 6.8% to 1e-13.
 
-3. Build the mirrored Eirene mesh (`fort.33`-`fort.35` and `mesh_generation.json`) and audit it. The audit writes the candidate
-   reflected pairs that step 4 reads:
+3. Build the mirrored Eirene mesh (`fort.33`-`fort.35` and `mesh_generation.json`) and audit it (the audit lists nearest reflected
+   points and the connectivity; it is a check, not proof of correct pairing):
 
        mirror_eirene_mesh.py --original old --old-b2 old/b2fgmtry --new-b2 new/b2fgmtry --output new/mesh
        audit_mesh_symmetry.py --b2-geometry new/b2fgmtry --eirene-vertices new/mesh/fort.33 \
-           --eirene-triangles new/mesh/fort.34 --output new/pairing.json
+           --eirene-triangles new/mesh/fort.34 --output new/mesh_audit.json
 
-4. Mirror the surface and source coordinates of the JSON Eirene inputs (`reference` is the directory holding the three JSON
-   files):
+4. Mirror the surface and source coordinates of the JSON Eirene inputs. `pairing.json` is prepared by hand and is not produced by
+   these tools: it holds `{"candidate_pairs": {"1": j1, "2": j2, ...}}`, the mirror partner of every additional surface
+   (numbered 1..N), and must be a complete involution. `old` holds the three JSON files:
 
-       symmetrise_eirene_inputs.py old new/pairing.json new/inputs new/mesh
+       symmetrise_eirene_inputs.py old pairing.json new/inputs new/mesh
 
 5. Project the restart state and the neutral background onto the symmetric grid (the neutral tool reads
    `new/mesh/mesh_generation.json`):

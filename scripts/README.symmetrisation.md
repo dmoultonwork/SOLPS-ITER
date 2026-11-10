@@ -22,5 +22,23 @@ Typical order:
    Eirene JSON inputs, preserving surface IDs and physics; label permutations are reported separately.
 5. `test_mesh_audit.py`: small analytic fixtures for the audit (`python3 test_mesh_audit.py`).
 
+Restart (initial state) tools, used after the grid is symmetric:
+
+6. `symmetrise_state.py`: project a restart onto mirror symmetry using conserved cell totals (species inventories, electron
+   thermal energy, combined ion thermal plus parallel kinetic energy; the forbidden even part of the parallel momentum is
+   removed; cached face fluxes are reflected with their face index shift). `symmetrise_attached_side.py` is the alternative
+   start that copies one half onto the other instead of averaging the two halves.
+7. `symmetrise_neutral_restart.py`: the same projection for the short virtual-neutral background of an Eirene restart
+   (`fort.13`); rate caches are invalidated so Eirene rebuilds them.
+8. `audit_state_symmetry.py`, `measure_plasma_asymmetry.py` and `audit_boundary_symmetry.py`: read-only checks of the
+   reflected parities of a state, of the volume-weighted inventories and mirror residuals, and of the explicitly supplied
+   boundary-condition values under the logical reflection.
+
 Units: B2.5 geometry is in metres, Eirene `fort.33` in centimetres; check units before comparing.
 The tools do not copy neutral restart data and do not symmetrise plasma states.
+
+Assumptions to check before use on another case: `audit_boundary_symmetry.py` expects 24 species per boundary entry,
+`symmetrise_neutral_restart.py` hard-codes the masses of the nine virtual neutral species of the STEP case
+(D2, D, ... and the He/Ar atoms and molecules, in that order) and the proton mass is the CODATA-2018 value (option
+`--proton-mass` in `symmetrise_state.py`; it must match the mass used by the linked solver). These are STEP-specific and
+should be generalised before the tools are used for other species sets.

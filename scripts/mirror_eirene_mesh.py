@@ -109,7 +109,7 @@ def reflected_coarse(ix, iy):
 
 
 def generate(original, old_geometry, new_geometry, output):
-    f = cf_fields(old_geometry, {'nx,ny', 'crx', 'cry'})
+    f = cf_fields(old_geometry, {'nx,ny', 'crx', 'cry', 'vol'})
     g = cf_fields(new_geometry, {'nx,ny', 'crx', 'cry', 'vol'})
     if f['nx,ny'] != [194, 32] or g['nx,ny'] != f['nx,ny']:
         raise ValueError('This verified coarse mapping applies only to STEP 194x32')
@@ -222,13 +222,28 @@ def generate(original, old_geometry, new_geometry, output):
             raise ValueError('Nonpositive new triangle area')
         if cell[0] > 0 and cell[1] > 0:
             volumes[cell] += toroidal_volume(p)
-    mismatch = 0.
+    # The mirrored mesh must cover the same B2 cells as the original, and no cell may be worse than the original Eirene
+    # mesh already was against the original B2 volume (a few cells of a given mesh can differ from the B2 volume by
+    # ~1e-5 for reasons unrelated to symmetrisation; the mirroring preserves that and must not add to it).
+    original_volumes = defaultdict(float)
+    for triangle, row in zip(triangles, records):
+        if row[-2] > 0 and row[-1] > 0:
+            original_volumes[tuple(row[-2:])] += toroidal_volume([points[v] for v in triangle])
+    if set(volumes) != set(original_volumes):
+        raise ValueError(f'B2 coupling coverage mismatch: {len(volumes)} cells now, {len(original_volumes)} originally')
+    mismatch = inherited = 0.
+    worse = []
     for (ix, iy), value in volumes.items():
         index = b2_x(ix)+1+(nx+2)*iy
-        expected = g['vol'][index]
-        mismatch = max(mismatch, abs(value-expected)/expected)
-    if len(volumes) != 6144 or mismatch > 1e-8:
-        raise ValueError(f'B2 coupling coverage/volume mismatch: {len(volumes)} cells, {mismatch}')
+        err = abs(value-g['vol'][index])/g['vol'][index]
+        old_err = abs(original_volumes[(ix, iy)]-f['vol'][index])/f['vol'][index]
+        mismatch, inherited = max(mismatch, err), max(inherited, old_err)
+        if err > old_err+1e-8:
+            worse.append((err, old_err, ix, iy))
+    if worse:
+        worse.sort(reverse=True)
+        raise ValueError(f'B2 coupling volume mismatch: {len(worse)} cells are worse than the original mesh; worst '
+                         f'(new error, original error, ix, iy) = {worse[0]}')
     output.mkdir(parents=True, exist_ok=True)
     with (output/'fort.33').open('w') as stream:
         stream.write(f'{len(full_points):12d}\n')
@@ -251,6 +266,7 @@ def generate(original, old_geometry, new_geometry, output):
               'maximum_original_vertex_shift_cm': max_shift,
               'maximum_shared_vertex_disagreement_cm': conflict,
               'coupled_b2_cells': len(volumes), 'maximum_coupling_volume_relative_error': mismatch,
+              'maximum_original_mesh_volume_relative_error': inherited,
               'vertex_reflection_zero_based': vertex_map,
               'triangle_reflection_zero_based': list(range(len(half), 2*len(half)))+list(range(len(half)))}
     (output/'mesh_generation.json').write_text(json.dumps(report, indent=2)+'\n')

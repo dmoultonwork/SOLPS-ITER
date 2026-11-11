@@ -91,10 +91,17 @@ are the inclusive guard-cell endpoints in x of the two mirror blocks (together t
        audit_mesh_symmetry.py --b2-geometry new/b2fgmtry --eirene-vertices new/mesh/fort.33 \
            --eirene-triangles new/mesh/fort.34 --output new/mesh_audit.report
 
-4. Mirror the additional surfaces and surface sources of the formatted Eirene input. `pairing.txt` is prepared by hand (these
-   tools do not produce it): one line `i j` for each additional surface of block 3b (numbered 1..N in the file), giving its mirror
-   partner, and `i i` for a surface that is its own mirror image; lines starting with `#` are comments. The mapping must be
-   a complete involution:
+4. Mirror the additional surfaces and surface sources of the formatted Eirene input. First find the mirror partner of every
+   additional surface of block 3b (numbered 1..N in the file):
+
+       make_surface_pairing.py old/fort.1 pairing.txt
+
+   Two surfaces are partners when the end points of one are the mirror images (Z to -Z) of the end points of the other, in
+   reversed order, to within 0.01 cm (`--tolerance`); a surface that is its own mirror image is paired with itself. The
+   script writes nothing and lists the surfaces concerned if any surface has no partner or several, because those need a
+   decision by hand. On the STEP input it finds 109 pairs and 4 self-mirror surfaces, the same as a pairing made by hand.
+   `pairing.txt` has one line `i j` per surface (`i i` for a self-mirror one); lines starting with `#` are comments, so a
+   hand-made file works too. The mapping must be a complete involution. Then:
 
        symmetrise_eirene_inputs.py old/fort.1 pairing.txt new/fort.1
 

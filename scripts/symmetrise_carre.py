@@ -5,6 +5,7 @@ This does not edit a b2fgmtry or assert that Eirene or the boundary data are sym
 The logical B2 reflection must have been checked before supplying the block endpoints.
 """
 import argparse
+import sys
 import json
 from pathlib import Path
 
@@ -68,6 +69,13 @@ if __name__ == '__main__':
     parser.add_argument('source', type=Path)
     parser.add_argument('destination', type=Path)
     parser.add_argument('--block', action='append', required=True, help='Inclusive B2 guard endpoints, e.g. -1:72')
-    args = parser.parse_args()
+    # argparse reads '-1:72' as an option, so join '--block -1:72' into '--block=-1:72'
+    argv, i = [], 1
+    while i < len(sys.argv):
+        if sys.argv[i] == '--block' and i + 1 < len(sys.argv):
+            argv.append('--block=' + sys.argv[i+1]); i += 2
+        else:
+            argv.append(sys.argv[i]); i += 1
+    args = parser.parse_args(argv)
     blocks = [tuple(map(int, value.split(':'))) for value in args.block]
     print(json.dumps(symmetrise(args.source, args.destination, blocks), indent=2))

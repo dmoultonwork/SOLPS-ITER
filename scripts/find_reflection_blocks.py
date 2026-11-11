@@ -87,7 +87,7 @@ def analyse(path, tolerance):
     if blocks:
         spec = ' '.join(f'{a}:{b}' for a, b in blocks)
         print('suggested:  audit_b2_reflection.py', path, spec)
-        print('            symmetrise_carre.py ' + ' '.join(f'--block {a}:{b}' for a, b in blocks) + ' source.geo destination.geo')
+        print('            symmetrise_carre.py ' + ' '.join(f'--block={a}:{b}' for a, b in blocks) + ' source.geo destination.geo')
     print('RESULT:', 'OK' if not verdict else 'not suitable: ' + '; '.join(verdict))
     return not verdict
 

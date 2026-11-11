@@ -16,7 +16,7 @@ Typical order:
    was checked on STEP grids only.
 1. `audit_b2_reflection.py b2fgmtry LO:HI [LO:HI ...]`: read-only check of how far an existing `b2fgmtry` is from exact
    mirror symmetry for the given logical reflection blocks (inclusive guard-cell endpoints in x).
-2. `symmetrise_carre.py --block LO:HI source.geo destination.geo`: write a reflected CARRE `.geo` input. Then regenerate
+2. `symmetrise_carre.py --block=LO:HI source.geo destination.geo`: write a reflected CARRE `.geo` input. Then regenerate
    `b2fgmtry` with the native `b2ag`, with the line `'b2agbs_average_flux' '1'` in `b2ag.dat` (option added in B2.5 by
    the same branch): it averages the reference flux over all valid western faces of a flux tube so that the metrics are
    mirror invariant.
@@ -54,8 +54,9 @@ should be generalised before the tools are used for other species sets.
 
 ## Worked example
 
-File names are illustrative. `old/` is the original case (`b2fgmtry`, `fort.33`/`fort.34`/`fort.35`, the formatted Eirene input
-`fort.1`, a `b2fstate`, a `fort.13` and `b2.boundary.parameters`); `new/` receives the symmetric case. `LO1:HI1` and `LO2:HI2`
+File names are illustrative. `old/` is the original case: the CARRE grid file `case.geo` (the `.geo` file that `carre` wrote and
+`b2ag` reads), the `b2ag.dat` used to build the grid, `b2fgmtry`, `fort.33`/`fort.34`/`fort.35`, the formatted Eirene input
+`fort.1`, a `b2fstate`, a `fort.13` and `b2.boundary.parameters`. `new/` receives the symmetric case. `LO1:HI1` and `LO2:HI2`
 are the inclusive guard-cell endpoints in x of the two mirror blocks (together they must cover -1..nx); step 0 finds them.
 
 0. Is the grid a connected double null, and which are the blocks?
@@ -69,10 +70,15 @@ are the inclusive guard-cell endpoints in x of the two mirror blocks (together t
 
        audit_b2_reflection.py old/b2fgmtry LO1:HI1 LO2:HI2
 
-2. Reflect the CARRE geometry, then regenerate the B2 geometry with the native `b2ag`. The `b2ag.dat` in `new/` must contain
-   the line `'b2agbs_average_flux' '1'` (this branch of B2.5). Repeat the audit on the new `b2fgmtry`:
+2. Reflect the CARRE geometry, then regenerate the B2 geometry with the native `b2ag`. For `b2ag.dat`, take the *same*
+   `old/b2ag.dat` that built the original grid, append the line `'b2agbs_average_flux' '1'` (option of this branch of B2.5),
+   and save it as `new/b2ag.dat`; change nothing else in it. Write the reflected `.geo` to `new/` under the same file name,
+   then run `b2ag` in `new/`. Repeat the audit on the new `b2fgmtry`. Write the block option as `--block=LO:HI` with an equals
+   sign: the endpoints are often negative (`-1:72`), and argparse would otherwise read them as another option.
 
-       symmetrise_carre.py --block LO1:HI1 --block LO2:HI2 old/case.geo new/case.geo
+       cp old/b2ag.dat new/b2ag.dat
+       echo "'b2agbs_average_flux' '1'" >> new/b2ag.dat
+       symmetrise_carre.py --block=LO1:HI1 --block=LO2:HI2 old/case.geo new/case.geo
        (run b2ag in new/)
        audit_b2_reflection.py new/b2fgmtry LO1:HI1 LO2:HI2
 

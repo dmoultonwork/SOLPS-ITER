@@ -11,7 +11,9 @@ For every pair the surface in the upper half (Z > 0) gets exactly the mirror ima
 lower half (ends swapped, Z negated), and the same is done for the SORAD1..4 coordinates of the surface sources (strata with
 a surface source, block 7). Coordinates are copied as text, so the mirror is exact in the file. All other parameters of
 paired surfaces and sources must agree (the surface labels in the last integer of the surface line may differ by the
-label swaps given with --swap, default -4:-3 and 5:6, which are those of the STEP case); otherwise the script stops.
+label exchange; by default this is inferred from the pairing: equal labels stay, and labels that differ within a pair are
+exchanged, which must hold consistently for all pairs, and is printed; or give it with --swap A:B, repeatable); otherwise the
+script stops.
 Nothing else in the file is touched. It does not check the physics of the labels, the mesh or the plasma background:
 those need separate checks. Neutral restart data are not handled here.
 """
@@ -49,9 +51,10 @@ def parse_pairs(path, count):
 def prepare(source, pairing, destination, swaps):
     lines = Path(source).read_text().split('\n')
     label_map = {}
-    for a, b in swaps:
-        label_map[a] = b
-        label_map[b] = a
+    if swaps is not None:
+        for a, b in swaps:
+            label_map[a] = b
+            label_map[b] = a
     # --- block 3b: additional surfaces
     start = next(k for k, l in enumerate(lines) if l.startswith('*** 3b.'))
     count = int(lines[start+1])
@@ -66,13 +69,27 @@ def prepare(source, pairing, destination, swaps):
         if not lines[k].startswith('*'):
             k += 1                      # surface-model text line
         surf[s] = entry
+    if swaps is None:
+        # infer the label exchange from the pairs: equal labels stay, different labels are swapped; must be consistent
+        inferred = {}
+        for i, j in pairs.items():
+            la, lb = (int(lines[surf[n]['ints']].split()[-1]) for n in (i, j))
+            for x, y in ((la, lb), (lb, la)):
+                if inferred.setdefault(x, y) != y:
+                    raise ValueError(f'Surface labels are not exchanged consistently: label {x} is paired with both '
+                                     f'{inferred[x]} and {y} (seen at surfaces {i}, {j}); give --swap explicitly')
+        label_map = inferred
+        swapped = sorted({tuple(sorted(kv)) for kv in inferred.items() if kv[0] != kv[1]})
+        print('surface labels exchanged by the mirror (inferred from the pairing): ' +
+              (', '.join(f'{a}<->{b}' for a, b in swapped) if swapped else 'none (every pair has equal labels)'))
     changes = []
     for i, j in sorted(pairs.items()):
         a, b = surf[i], surf[j]
         pa = lines[a['par']].split(); pb = lines[b['par']].split()
         ia = [int(x) for x in lines[a['ints']].split()]; ib = [int(x) for x in lines[b['ints']].split()]
         if pa != pb or ia[:-1] != ib[:-1] or label_map.get(ia[-1], ia[-1]) != ib[-1]:
-            raise ValueError(f'Surface physics mismatch between {i} and {j}')
+            raise ValueError(f'Surface physics mismatch between {i} and {j}: parameters {pa == pb}, integers except label '
+                             f'{ia[:-1] == ib[:-1]}, labels {ia[-1]} and {ib[-1]} (expected {label_map.get(ia[-1], ia[-1])})')
         ca = fields(lines[a['xy']], 6); cb = fields(lines[b['xy']], 6)
         if i == j:
             if ca[0] != cb[3] or float(ca[1]) != -float(cb[4]):
@@ -151,5 +168,5 @@ if __name__ == '__main__':
     p.add_argument('--swap', action='append', default=None, metavar='A:B',
                    help='surface labels (last integer of the surface line) exchanged by the mirror, e.g. -4:-3; repeatable')
     a = p.parse_args()
-    swaps = [tuple(int(v) for v in s.split(':')) for s in (a.swap or ['-4:-3', '5:6'])]
+    swaps = [tuple(int(v) for v in s.split(':')) for s in a.swap] if a.swap else None
     prepare(a.source, a.pairing, a.destination, swaps)

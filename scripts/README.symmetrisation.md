@@ -46,8 +46,8 @@ Units: B2.5 geometry is in metres, Eirene `fort.33` in centimetres; check units 
 The tools do not copy neutral restart data (except step 7) and do not symmetrise plasma states (except step 6).
 
 Assumptions to check before use on another case: `audit_boundary_symmetry.py` expects 24 species per boundary entry,
-`symmetrise_eirene_inputs.py` swaps the surface labels -4 <-> -3 and 5 <-> 6 by default (option `--swap A:B`, repeatable, to
-change them), `symmetrise_neutral_restart.py` hard-codes the masses (2, 2, 2, 4, 4, 4, 4, 4, 4 proton masses) of the nine
+`symmetrise_eirene_inputs.py` infers which surface labels the mirror exchanges from the pairing and prints them (STEP: -4 <-> -3
+and 5 <-> 6); the option `--swap A:B`, repeatable, overrides this. Check that the printed exchange is what you expect, `symmetrise_neutral_restart.py` hard-codes the masses (2, 2, 2, 4, 4, 4, 4, 4, 4 proton masses) of the nine
 virtual neutral species of the STEP restart file, in file order, and the proton mass is the CODATA-2018 value (option
 `--proton-mass` in `symmetrise_state.py`; it must match the mass used by the linked solver). These are STEP-specific and
 should be generalised before the tools are used for other species sets.

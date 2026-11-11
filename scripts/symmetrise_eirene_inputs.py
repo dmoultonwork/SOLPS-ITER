@@ -145,7 +145,13 @@ def prepare(source, pairing, destination, swaps):
                 raise ValueError(f'Source parameter mismatch between surfaces {i} and {j}')
             lower, upper = ((base_i, base_j) if float(xa[2]) + float(xa[3]) < 0 else (base_j, base_i))
             xl = fields(lines[lower+3], 6); xu = fields(lines[upper+3], 6)
+            # SORAD1,2 bound the first coordinate (R) and SORAD3,4 the second (Z) of the source on the surface. Eirene
+            # samples uniformly between the two ends of each range, so only the set of values matters, not their order:
+            # a source whose ranges already are the mirror image of its partner's (in either order) is left as it is.
             new = [xl[0], xl[1], neg(xl[2]), neg(xl[3])] + xu[4:]
+            if {float(v) for v in new[:2]} == {float(v) for v in xu[:2]} and \
+                    {float(v) for v in new[2:4]} == {float(v) for v in xu[2:4]}:
+                continue
             if new != xu:
                 source_changes.append((int(lines[h].split(':')[0].strip('* ')), lines[upper+3], put(lines[upper+3], new)))
                 lines[upper+3] = put(lines[upper+3], new)

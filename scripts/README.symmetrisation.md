@@ -118,6 +118,13 @@ are the inclusive guard-cell endpoints in x of the two mirror blocks (together t
 
    On the STEP case the species inventories were conserved to 1e-16 and the electron and ion energies exactly.
 
+   The neutral tool reads the short-format `fort.13` of the SOLPS-ITER coupling (one record of 9 virtual species x cells x 5
+   moments) and writes a moments-only restart; the mesh-clipped run needs a matching Eirene that reads it (not part of this step
+   of the branch). If `old/fort.13` was written on the ORIGINAL mesh, its cell count differs from the new mesh, and the tool
+   then uses `new/mesh/triangle_origin.txt` (written by `mirror_eirene_mesh.py`: the original triangle each new triangle comes
+   from) to carry the cells over: the lower half keeps its values and the upper half takes the mirror image of the lower half,
+   so the values of the original upper half are not used. Rerun `mirror_eirene_mesh.py` if `triangle_origin.txt` is missing.
+
 6. Check the result and the boundary-condition input (each tool writes a report to the file named last):
 
        audit_state_symmetry.py new/b2fstati new/b2fgmtry new/state_audit.report

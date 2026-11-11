@@ -15,6 +15,12 @@ from scipy.io import FortranFile
 def project(source,geometry,destination):
  mapping=np.loadtxt(geometry/'triangle_reflection.txt',dtype=int)
  with FortranFile(source,'r') as f:a=f.read_reals(np.float64)
+ if a.size//45!=len(mapping)+6 and (geometry/'triangle_origin.txt').exists():
+  # restart written on the ORIGINAL mesh: carry each cell over to the new triangle that comes from it (lower half is kept,
+  # the upper half is the mirror of the lower half and takes the lower cell's values, then the code below symmetrises)
+  origin=np.loadtxt(geometry/'triangle_origin.txt',dtype=int);nco=a.size//45
+  assert a.size==45*nco and origin.max()<nco-6,'restart does not belong to the original mesh'
+  a=a.reshape((9,nco,5),order='F')[:,np.r_[origin,np.arange(nco-6,nco)],:].ravel(order='F')
  nc=a.size//45;assert nc==len(mapping)+6 and a.size==45*nc
  m=np.r_[mapping,np.arange(len(mapping),nc)];assert np.array_equal(m[m],np.arange(nc))
  old=a.reshape((9,nc,5),order='F');new=old.copy();n=old[:,:,1];den=n+n[:,m];assert np.all(n>=0)

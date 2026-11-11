@@ -174,7 +174,7 @@ def generate(original, old_geometry, new_geometry, output):
             moved.append((pa[0]+t*(pb[0]-pa[0]), 0.))
         return intersections[key]
 
-    half, metadata = [], []
+    half, metadata, origin = [], [], []
     clipped = 0
     for i, (triangle, row) in enumerate(zip(triangles, records)):
         polygon = []
@@ -198,6 +198,7 @@ def generate(original, old_geometry, new_geometry, output):
                 t = (t[0], t[2], t[1])
             half.append(t)
             metadata.append(tuple(row[-2:]))
+            origin.append(i)
     used = sorted({v for t in half for v in t})
     remap = {v: i for i, v in enumerate(used)}
     full_points = [moved[v] for v in used]
@@ -271,6 +272,9 @@ def generate(original, old_geometry, new_geometry, output):
               'triangle_reflection_zero_based': list(range(len(half), 2*len(half)))+list(range(len(half)))}
     (output/'mesh_generation.json').write_text(json.dumps(report, indent=2)+'\n')
     # Reflection map of the Eirene cells (zero-based, one index per line), read by the neutral-restart tools.
+    # Index (zero-based) of the original triangle each new triangle comes from: the lower half keeps its triangles (a
+    # clipped triangle gives several), the upper half is the mirror image of the lower half and takes the same origin.
+    (output/'triangle_origin.txt').write_text(''.join('%d\n' % i for i in origin+origin))
     (output/'triangle_reflection.txt').write_text(''.join('%d\n' % i for i in report['triangle_reflection_zero_based']))
     print(json.dumps({k: v for k, v in report.items() if not isinstance(v, list)}, indent=2))
 

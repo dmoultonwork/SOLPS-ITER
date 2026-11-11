@@ -250,7 +250,9 @@ def generate(original, old_geometry, new_geometry, output):
         stream.write(f'{len(full_points):12d}\n')
         for axis in range(2):
             for i in range(0, len(full_points), 4):
-                stream.write(' '.join(f'{p[axis]:.17e}' for p in full_points[i:i+4])+'\n')
+                # same fixed format as the Eirene files written by the SOLPS-ITER tools (4 values of 19 characters, 8 decimals):
+                # b2ag deduces the precision of its own fort.30 from this file and rejects other layouts
+                stream.write(''.join(f'{p[axis]:19.8E}' for p in full_points[i:i+4])+'\n')
     with (output/'fort.34').open('w') as stream:
         stream.write(f'{len(full_triangles):12d}\n')
         for i, t in enumerate(full_triangles):

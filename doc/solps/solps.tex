@@ -7871,6 +7871,16 @@ necessary to rescale these. A scheme to do so was developed by A. Kukushkin for 
 and can be activated using the {\tt eirene\_ank\_mods} switch. See the listing in Appendix~\ref{lis:b2cdci}
 and the additional description in the {\tt \$\{SOLPSTOP\}/doc/Source\_Scaling\_in\_B2.pdf} file.
 
+For a connected double null simulation, the {\tt Eirene} sources can be averaged with their up-down mirror images before
+they are passed to {\tt B2.5}, by setting {\tt 'eirene\_symmetrise\_sources'} to {\tt '1'} in {\tt b2mn.dat} (default 0, no
+averaging). The source of each cell is replaced by the average of its own and that of the cell obtained by reflection about the
+midplane, within each of the two poloidal blocks. The particle and energy sources and their linearisation coefficients are
+even under the reflection; the constant part of the parallel momentum source is odd. This only makes sense when the
+simulation is a connected double null (both X-points on the same flux surface) on an up-down symmetric grid, with an up-down
+symmetric {\tt Eirene} mesh and input file. When the switch is read, the code stops if the grid is not a connected double null;
+whether the grid itself is symmetric is not checked. Tools to make a nearly symmetric grid, mesh and input exactly symmetric are in
+\texttt{\$\{SOLPSTOP\}/scripts} (see {\tt README.symmetrisation.md}).
+
 \section{Classical transport: Braginskii, Balescu and Zhdanov formulations}
 \index{Classical transport}\index{Braginskii}\index{Balescu}\index{Zhdanov}\label{sec:balescubraginskii}
 

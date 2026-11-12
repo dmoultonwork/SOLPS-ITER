@@ -142,7 +142,7 @@ are the inclusive guard-cell endpoints in x of the two mirror blocks (together t
 
 | Key | Default | Effect |
 |---|---|---|
-| `eirene_symmetrise_sources` | 0 | 1 averages the sources that Eirene hands to B2.5 with their up-down mirror image (B2.5 branch `feature/moultod/stepspeedup`). Particle, energy and linearisation coefficients are even; the constant part of the parallel-momentum source is odd. Needs the symmetric grid of steps 0-3 and exactly two poloidal blocks (a connected double null); otherwise the run stops with a message. The averaging is applied once per Eirene call, to the final sources, and prints `STEP_SRC_SYMMETRISED` in the log. With 0 the code is unchanged. |
+| `eirene_symmetrise_sources` | 0 | 1 averages the sources that Eirene hands to B2.5 with their up-down mirror image (B2.5 branch `feature/moultod/stepspeedup`). **Only meaningful for a connected double null** on an up-down symmetric grid; when the key is read, the run stops if the grid is not a connected double null (two cuts, same `topcut` and `bottomcut`). Whether the grid itself is symmetric is not checked: use steps 0-3 above. Particle, energy and linearisation coefficients are even; the constant part of the parallel-momentum source is odd. The averaging is applied once per Eirene call, to the final sources, and prints `EIRENE_SOURCES_SYMMETRISED` in the log. With 0 the code is unchanged. Documented in `b2input.xml` and `doc/solps/solps.tex`. |
 
 The key is read once per run, so it cannot be switched during a run. It averages the sources of each cell with those of its
 mirror cell. It does not replace the symmetric grid, mesh and `fort.1` of steps 0-4, which the mirror cells need to be equal.

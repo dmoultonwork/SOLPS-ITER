@@ -53,7 +53,8 @@ def read_state(path):
 
 
 def write_state(path, version, fields):
-    """Match native cfruin/cfrure fixed columns, with full double precision."""
+    """Match the native cfruin/cfrure layout (6 values of 22 characters, 13 decimals), so that a b2fstate written by b2mn
+    is never smaller than this file (the run scripts judge a run by file size)."""
     path.parent.mkdir(parents=True, exist_ok=True)
     with path.open('w') as stream:
         stream.write(version)
@@ -65,12 +66,12 @@ def write_state(path, version, fields):
                 for i in range(0,count,12):
                     stream.write(''.join(f' {v:10d}' for v in values[i:i+12])+'\n')
             else:
-                for i in range(0,count,5):
+                for i in range(0,count,6):
                     formatted=[]
-                    for value in values[i:i+5]:
-                        mantissa, exponent=f'{value:.17E}'.split('E')
+                    for value in values[i:i+6]:
+                        mantissa, exponent=f'{value:.13E}'.split('E')
                         literal=f'{mantissa}E{int(exponent):+04d}'
-                        formatted.append(f' {literal:>25s}')
+                        formatted.append(f'{literal:>22s}')
                     stream.write(''.join(formatted)+'\n')
 
 

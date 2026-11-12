@@ -118,6 +118,10 @@ are the inclusive guard-cell endpoints in x of the two mirror blocks (together t
 
    On the STEP case the species inventories were conserved to 1e-16 and the electron and ion energies exactly.
 
+   `symmetrise_state.py` writes `b2fstati` in the native layout (6 values of 22 characters, 13 decimals; reading and rewriting a
+   native file reproduces it byte for byte). This matters: `b2run` judges a run by comparing the size of the new `b2fstate`
+   with that of `b2fstati`, and reports "Run apparently failed: Optional files not moved" if the new one is smaller.
+
    The neutral tool reads the short-format `fort.13` of the SOLPS-ITER coupling (one record of 9 virtual species x cells x 5
    moments) and writes a moments-only restart; the mesh-clipped run needs a matching Eirene that reads it (not part of this step
    of the branch). If `old/fort.13` was written on the ORIGINAL mesh, its cell count differs from the new mesh, and the tool

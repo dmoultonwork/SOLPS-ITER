@@ -7886,6 +7886,15 @@ symmetric {\tt Eirene} mesh and input file. The switch is read at the first call
 whether the grid itself is symmetric is not checked. Tools to make a nearly symmetric grid, mesh and input exactly symmetric are in
 \texttt{\$\{SOLPSTOP\}/scripts} (see {\tt README.symmetrisation.md}).
 
+
+When {\tt Eirene} is called only every {\tt eirene\_mod} steps ({\tt b2.neutrals.parameters}), the sources of the last call are
+by default used unchanged on the steps in between. Three opt-in switches in {\tt b2mn.dat} make them follow the plasma.
+{\tt 'eirene\_rate\_reconstruct'} (sum of bits; typically 113) scales the ionisation, recombination and electron
+cooling sources of each cell by the ratio of {\tt Eirene}'s own summed reaction rates at the present and at the last-call plasma
+state, and adds a charge-exchange momentum and ion energy response; {\tt 'eirene\_ramp\_steps'} blends the previous source into the
+new one over the given number of steps after each call; {\tt 'eirene\_ramp\_state\_file'} gives the file from which a restarted
+run continues that blend. All three default to off, in which case the code is unchanged. See Appendix~\ref{lis:b2cdci}.
+
 \section{Classical transport: Braginskii, Balescu and Zhdanov formulations}
 \index{Classical transport}\index{Braginskii}\index{Balescu}\index{Zhdanov}\label{sec:balescubraginskii}
 

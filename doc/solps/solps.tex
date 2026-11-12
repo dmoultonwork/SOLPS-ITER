@@ -7882,7 +7882,7 @@ averaging). The source of each cell is replaced by the average of its own and th
 midplane, within each of the two poloidal blocks. The particle and energy sources and their linearisation coefficients are
 even under the reflection; the constant part of the parallel momentum source is odd. This only makes sense when the
 simulation is a connected double null (both X-points on the same flux surface) on an up-down symmetric grid, with an up-down
-symmetric {\tt Eirene} mesh and input file. When the switch is read, the code stops if the grid is not a connected double null;
+symmetric {\tt Eirene} mesh and input file. The switch is read at the first call of {\tt Eirene}, before any {\tt Eirene} run, and the code stops if the grid is not a connected double null;
 whether the grid itself is symmetric is not checked. Tools to make a nearly symmetric grid, mesh and input exactly symmetric are in
 \texttt{\$\{SOLPSTOP\}/scripts} (see {\tt README.symmetrisation.md}).
 

@@ -138,7 +138,7 @@ are the inclusive guard-cell endpoints in x of the two mirror blocks (together t
 7. Run the case with the new `b2fgmtry` and `fort.30` (from `b2ag`), the mirrored `fort.33`-`fort.35`, the mirrored `fort.1`,
    `b2fstati` and `fort.13`. The surface and source physics are not certified by these tools: audit them separately.
 
-## Run settings (b2mn.dat)
+## Settings added by this branch (b2ag.dat and b2mn.dat)
 
 | Key | Default | Effect |
 |---|---|---|

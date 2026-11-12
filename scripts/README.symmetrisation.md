@@ -137,3 +137,14 @@ are the inclusive guard-cell endpoints in x of the two mirror blocks (together t
 
 7. Run the case with the new `b2fgmtry` and `fort.30` (from `b2ag`), the mirrored `fort.33`-`fort.35`, the mirrored `fort.1`,
    `b2fstati` and `fort.13`. The surface and source physics are not certified by these tools: audit them separately.
+
+## Run settings (b2mn.dat)
+
+| Key | Default | Effect |
+|---|---|---|
+| `eirene_symmetrise_sources` | 0 | 1 averages the sources that Eirene hands to B2.5 with their up-down mirror image (B2.5 branch `feature/moultod/stepspeedup`). Particle, energy and linearisation coefficients are even; the constant part of the parallel-momentum source is odd. Needs the symmetric grid of steps 0-3 and exactly two poloidal blocks (a connected double null); otherwise the run stops with a message. The averaging is applied once per Eirene call, to the final sources, and prints `STEP_SRC_SYMMETRISED` in the log. With 0 the code is unchanged. |
+
+The key is read once per run, so it cannot be switched during a run. It acts on the sources only: it does not make the
+Eirene Monte Carlo noise symmetric (use the same random numbers in both halves, or average, for that), and it does not
+replace the symmetric `fort.1` and mesh of steps 3-4, which it needs in order to make the mirror cells of the two halves equal.
+

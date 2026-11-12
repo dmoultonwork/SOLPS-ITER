@@ -148,3 +148,17 @@ are the inclusive guard-cell endpoints in x of the two mirror blocks (together t
 The key is read once per run, so it cannot be switched during a run. It averages the sources of each cell with those of its
 mirror cell. It does not replace the symmetric grid, mesh and `fort.1` of steps 0-4, which the mirror cells need to be equal.
 
+
+## Between-call source reconstruction and ramp (b2mn.dat)
+
+These act on the steps without an Eirene call (`eirene_mod` > 1 in `b2.neutrals.parameters`) and need Eirene coupled
+in-process. All default to off, in which case the code is unchanged. They are independent of the grid symmetrisation.
+
+| Key | Default | Effect |
+|---|---|---|
+| `eirene_rate_reconstruct` | 0 | Sum of bits; bit 1 enables. 1: scale the ionisation, recombination and electron-cooling sources by the ratio of Eirene's own summed rates at the present and last-call plasma state, per cell (ratios limited to 0.25-4). 16: charge-exchange momentum and ion-energy response. 32: widen the ratio limits to 0.001-1000. 64: keep the electron density of the last call in the rates. Typical value 113. |
+| `eirene_ramp_steps` | 0 | N > 0: blend the previous source into the new one over N steps after each call. |
+| `eirene_ramp_state_file` | none | File written at each checkpoint and at the end (`eirene_ramp_state.<tag>`) so that a restart continues the blend, for example `'../eirene_ramp_state.final'`. |
+
+Documented in `b2input.xml` and `doc/solps/solps.tex`. The scheme was developed for, and tested on, a STEP double-null case;
+it has not been compared with a stock run on another case.

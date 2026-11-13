@@ -156,7 +156,9 @@ in-process. All default to off, in which case the code is unchanged. They are in
 
 | Key | Default | Effect |
 |---|---|---|
-| `eirene_rate_reconstruct` | 0 | Sum of bits; bit 1 enables. 1: scale the ionisation, recombination and electron-cooling sources by the ratio of Eirene's own summed rates at the present and last-call plasma state, per cell (ratios limited to 0.25-4). 16: charge-exchange momentum and ion-energy response. 32: widen the ratio limits to 0.001-1000. 64: keep the electron density of the last call in the rates. Typical value 113. |
+| `eirene_rate_reconstruct` | 0 | 1: scale the ionisation, recombination and electron-cooling sources by the ratio of Eirene's own summed rates at the present and last-call plasma state, per cell, and add a charge-exchange momentum and ion-energy response. |
+| `eirene_rate_ratio_min`, `eirene_rate_ratio_max` | 1e-3, 1e3 | Limits of those ratios (min > 0). |
+| `eirene_rate_fixed_ne` | 0 | 1: keep the electron density of the last call in the rates, so the scaling follows Te only. Not tested separately from the other settings. |
 | `eirene_ramp_steps` | 0 | N > 0: blend the previous source into the new one over N steps after each call. |
 | `eirene_ramp_state_file` | none | File written at each checkpoint and at the end (`eirene_ramp_state.<tag>`) so that a restart continues the blend, for example `'../eirene_ramp_state.final'`. |
 

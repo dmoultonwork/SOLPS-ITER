@@ -7888,10 +7888,12 @@ whether the grid itself is symmetric is not checked. Tools to make a nearly symm
 
 
 When {\tt Eirene} is called only every {\tt eirene\_mod} steps ({\tt b2.neutrals.parameters}), the sources of the last call are
-by default used unchanged on the steps in between. Three opt-in switches in {\tt b2mn.dat} make them follow the plasma.
-{\tt 'eirene\_rate\_reconstruct'} (sum of bits; typically 113) scales the ionisation, recombination and electron
+by default used unchanged on the steps in between. Opt-in switches in {\tt b2mn.dat} make them follow the plasma.
+{\tt 'eirene\_rate\_reconstruct'} (0 or 1) scales the ionisation, recombination and electron
 cooling sources of each cell by the ratio of {\tt Eirene}'s own summed reaction rates at the present and at the last-call plasma
-state, and adds a charge-exchange momentum and ion energy response; {\tt 'eirene\_ramp\_steps'} blends the previous source into the
+state, limited to {\tt 'eirene\_rate\_ratio\_min'} to {\tt 'eirene\_rate\_ratio\_max'} (default 0.001 to 1000), and adds a
+charge-exchange momentum and ion energy response; {\tt 'eirene\_rate\_fixed\_ne'} 1 keeps the electron density of the last call in the
+rates. The neutral densities of the last call are not updated between calls. {\tt 'eirene\_ramp\_steps'} blends the previous source into the
 new one over the given number of steps after each call; {\tt 'eirene\_ramp\_state\_file'} gives the file from which a restarted
 run continues that blend. All three default to off, in which case the code is unchanged. See Appendix~\ref{lis:b2cdci}.
 

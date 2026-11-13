@@ -160,7 +160,7 @@ in-process. All default to off, in which case the code is unchanged. They are in
 | `eirene_rate_ratio_min`, `eirene_rate_ratio_max` | 1e-3, 1e3 | Limits of those ratios (min > 0). |
 | `eirene_rate_fixed_ne` | 0 | 1: keep the electron density of the last call in the rates, so the scaling follows Te only. Not tested separately from the other settings. |
 | `eirene_ramp_steps` | 0 | N > 0: blend the previous source into the new one over N steps after each call. |
-| `eirene_ramp_state_file` | none | File written at each checkpoint and at the end (`eirene_ramp_state.<tag>`) so that a restart continues the blend, for example `'../eirene_ramp_state.final'`. |
+| `eirene_ramp_state_file` | none | Normally not needed: with `eirene_ramp_steps` > 0 the run writes `../eirene_ramp_state` (run directory) at each checkpoint and at the end, and the next run loads it automatically if its simulation time matches the restart state; otherwise, or if there is no file, a warning is printed and the first call is not ramped. Set it to use another file, for example `'../eirene_ramp_state.0007'`; a named file must match or the run stops. |
 
 Documented in `b2input.xml` and `doc/solps/solps.tex`. The scheme was developed for, and tested on, a STEP double-null case;
 it has not been compared with a stock run on another case.

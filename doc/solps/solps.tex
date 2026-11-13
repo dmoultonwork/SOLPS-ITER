@@ -7894,8 +7894,9 @@ cooling sources of each cell by the ratio of {\tt Eirene}'s own summed reaction 
 state, limited to {\tt 'eirene\_rate\_ratio\_min'} to {\tt 'eirene\_rate\_ratio\_max'} (default 0.001 to 1000), and adds a
 charge-exchange momentum and ion energy response; {\tt 'eirene\_rate\_fixed\_ne'} 1 keeps the electron density of the last call in the
 rates. The neutral densities of the last call are not updated between calls. {\tt 'eirene\_ramp\_steps'} blends the previous source into the
-new one over the given number of steps after each call; {\tt 'eirene\_ramp\_state\_file'} gives the file from which a restarted
-run continues that blend. All three default to off, in which case the code is unchanged. See Appendix~\ref{lis:b2cdci}.
+new one over the given number of steps after each call; a restarted run continues that blend automatically from {\tt ../eirene\_ramp\_state}, which is written at every
+checkpoint and at the end of a run and used only if its simulation time matches the restart state
+({\tt 'eirene\_ramp\_state\_file'} names another file). The switches default to off, in which case the code is unchanged. See Appendix~\ref{lis:b2cdci}.
 
 \section{Classical transport: Braginskii, Balescu and Zhdanov formulations}
 \index{Classical transport}\index{Braginskii}\index{Balescu}\index{Zhdanov}\label{sec:balescubraginskii}

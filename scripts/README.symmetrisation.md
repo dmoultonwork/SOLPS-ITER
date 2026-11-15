@@ -164,3 +164,24 @@ in-process. All default to off, in which case the code is unchanged. They are in
 
 Documented in `b2input.xml` and `doc/solps/solps.tex`. The scheme was developed for, and tested on, a STEP double-null case;
 it has not been compared with a stock run on another case.
+
+## Parallel speed-up and restart helpers (b2mn.dat)
+
+| Key | Default | Effect |
+|---|---|---|
+| `balance_last_step` | 0 | 1 (with `balance_netcdf` 1): balance arrays updated and written only on the last step of a run (or when the remaining `b2mndr_cpu`/`b2mndr_elapsed` is below twice the longest step). The Eirene part of the balance is still gathered at every call. |
+| `b2stbr_sna_history_file` | none | Restart file with the `SNA_CORR` controller memory `t1`: first line the number of species, second line the values. |
+
+OpenMP and idle ranks (no keys, set at build time and by the launcher):
+
+- Build with `source SETUP/openmp` before `gmake` (see `solps.tex`). The change in `b2news_.F`, `b2npmo.F` and `b2mod_ma28_for_7diag.F` keeps
+  a separate pivot state for each species in the OpenMP solves of the 7-diagonal and momentum equations and removes the restarts of the MA28
+  solver that discarded it.
+- In an MPI run, ranks 1 and up wait for the next Eirene call with a non-blocking broadcast and a 1 ms sleep between polls (`b2mod_main.F`,
+  `xertst.F`), so that they do not occupy cores that the OpenMP threads of rank 0 need. **This needs the matching Eirene change** (`eirsrt.F`
+  in `src/interfaces/couple_SOLPS-ITER`, branch `feature/moultod/stepspeedup` of `dmoultonwork/EIRENE`): blocking and non-blocking
+  broadcasts do not match in Open MPI, so build B2.5 and Eirene from these branches together.
+- Thread count: only rank 0 should run several threads. With Open MPI the number given to `OMP_NUM_THREADS` is not necessarily passed to rank 0,
+  so check in the log how many threads are in use. The idle-rank sleep interval is fixed at 1 ms and has been tested with Open MPI only.
+- Tested on one STEP double null case: the plasma with 8 threads agreed with that of 1 thread and of the serial code. Not tested with other
+  MPI libraries or cases.

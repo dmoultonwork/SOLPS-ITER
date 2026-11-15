@@ -7898,6 +7898,14 @@ new one over the given number of steps after each call; a restarted run continue
 checkpoint and at the end of a run and used only if its simulation time matches the restart state
 ({\tt 'eirene\_ramp\_state\_file'} names another file). The switches default to off, in which case the code is unchanged. See Appendix~\ref{lis:b2cdci}.
 
+In a coupled {\tt B2.5}-{\tt Eirene} run with MPI, only rank 0 runs {\tt B2.5}; the other ranks wait for the next {\tt Eirene} call. They
+now do so by polling a non-blocking broadcast and sleeping 1~ms between polls, instead of spinning in a blocking one, so that the cores are
+free for the OpenMP threads of rank 0 ({\tt set\_openmp} before the build; the thread count must be set for rank 0, which depends on how
+{\tt mpirun} passes {\tt OMP\_NUM\_THREADS}). This needs the matching change in the {\tt Eirene} interface ({\tt eirsrt.F}). The OpenMP
+solves of the momentum and 7-diagonal equations keep a separate pivot state for each species. {\tt 'balance\_last\_step'} 1 makes the
+balance arrays be updated only on the last step of a run; {\tt 'b2stbr\_sna\_history\_file'} gives the {\tt SNA\_CORR} controller memory
+for a restart.
+
 \section{Classical transport: Braginskii, Balescu and Zhdanov formulations}
 \index{Classical transport}\index{Braginskii}\index{Balescu}\index{Zhdanov}\label{sec:balescubraginskii}
 

@@ -54,10 +54,21 @@ should be generalised before the tools are used for other species sets.
 
 ## Worked example
 
+All commands below are typed in a **tcsh** shell, one line each (do not break them with a backslash: a line break lost in copy and
+paste silently drops the `--` of an option), from the `baserun` directory of your case. Set up once per shell session:
+
+    source setup.csh            # in the top directory of the SOLPS-ITER tree: puts the tools of scripts/ on your PATH
+    source SETUP/mpi            # b2run then uses the MPI executables; also 'source SETUP/openmp' if you built with OpenMP
+    cd runs/<your case>/baserun
+    mkdir old new               # old/ gets copies of your original files (below), new/ receives the symmetric case
+
 File names are illustrative. `old/` is the original case: the CARRE grid file `case.geo` (the `.geo` file that `carre` wrote and
 `b2ag` reads), the `b2ag.dat` used to build the grid, `b2fgmtry`, `fort.33`/`fort.34`/`fort.35`, the formatted Eirene input
 `fort.1`, a `b2fstate`, a `fort.13` and `b2.boundary.parameters`. `new/` receives the symmetric case. `LO1:HI1` and `LO2:HI2`
 are the inclusive guard-cell endpoints in x of the two mirror blocks (together they must cover -1..nx); step 0 finds them.
+Copy the files listed for `old/` from your original `baserun` and run directory into `old/` (the tools only read `old/`). The starting
+state is `b2fstate` if you take the end of a run, or `b2fstati` if you take an input state: use whichever you have, under its own name in
+the commands below. Your original `baserun` also holds `b2ah.dat`, `b2ai.dat`, `b2ar.dat` and `b2frates`, which step 7 needs.
 
 0. Is the grid a connected double null, and which are the blocks?
 
@@ -79,17 +90,19 @@ are the inclusive guard-cell endpoints in x of the two mirror blocks (together t
        cp old/b2ag.dat new/b2ag.dat
        echo "'b2agbs_average_flux' '1'" >> new/b2ag.dat
        symmetrise_carre.py --block=LO1:HI1 --block=LO2:HI2 old/case.geo new/case.geo
-       (run b2ag in new/)
+       cd new; b2run b2ag; cd ..
        audit_b2_reflection.py new/b2fgmtry LO1:HI1 LO2:HI2
 
+   `b2run b2ag` takes a few seconds and ends with `STOP b2ag`. In `new/` it prints `Failed opening fort.33` and still writes a
+   `fort.30`: that is expected here (the mirrored mesh does not exist yet), and **that `fort.30` is not the one to use**; step 7 makes
+   the final one. Only `new/b2fgmtry` matters at this stage.
    On the STEP case this took the corner mismatch from 3e-4 m to 0, the cell-volume mismatch from 4.6% to 3e-14 and the
    `hx` mismatch from 6.8% to 1e-13.
 
 3. Build the mirrored Eirene mesh (`new/mesh/fort.33`-`fort.35` and `new/mesh/triangle_reflection.txt`) and audit it:
 
        mirror_eirene_mesh.py --original old --old-b2 old/b2fgmtry --new-b2 new/b2fgmtry --output new/mesh
-       audit_mesh_symmetry.py --b2-geometry new/b2fgmtry --eirene-vertices new/mesh/fort.33 \
-           --eirene-triangles new/mesh/fort.34 --output new/mesh_audit.report
+       audit_mesh_symmetry.py --b2-geometry new/b2fgmtry --eirene-vertices new/mesh/fort.33 --eirene-triangles new/mesh/fort.34 --output new/mesh_audit.report
 
 4. Mirror the additional surfaces and surface sources of the formatted Eirene input. First find the mirror partner of every
    additional surface of block 3b (numbered 1..N in the file):
@@ -116,6 +129,9 @@ are the inclusive guard-cell endpoints in x of the two mirror blocks (together t
        symmetrise_state.py --source old/b2fstate --old-b2 old/b2fgmtry --new-b2 new/b2fgmtry --output new/b2fstati
        symmetrise_neutral_restart.py old/fort.13 new/mesh new/fort.13
 
+   (`--source` is the name of your starting state in `old/`: `old/b2fstati` if that is what you have; `No such file or directory`
+   means the name is wrong. The state projection takes about 20 s.)
+
    On the STEP case the species inventories were conserved to 1e-16 and the electron and ion energies exactly.
 
    `symmetrise_state.py` writes `b2fstati` in the native layout (6 values of 22 characters, 13 decimals; reading and rewriting a
@@ -129,14 +145,66 @@ are the inclusive guard-cell endpoints in x of the two mirror blocks (together t
    from) to carry the cells over: the lower half keeps its values and the upper half takes the mirror image of the lower half,
    so the values of the original upper half are not used. Rerun `mirror_eirene_mesh.py` if `triangle_origin.txt` is missing.
 
+   **On the public stepspeedup branch do not use `new/fort.13` as a restart:** it needs an Eirene that reads the saved virtual
+   background in the short format, which is not in the Eirene of this branch. Start without a neutral restart (no `fort.13` in the run
+   directory); the first Eirene call then starts cold and the first tens of steps are a strong transient.
+
 6. Check the result and the boundary-condition input (each tool writes a report to the file named last):
 
        audit_state_symmetry.py new/b2fstati new/b2fgmtry new/state_audit.report
        measure_plasma_asymmetry.py new/b2fstati new/b2fgmtry new/asymmetry.report
        audit_boundary_symmetry.py old/b2.boundary.parameters new/boundary_audit.report
 
-7. Run the case with the new `b2fgmtry` and `fort.30` (from `b2ag`), the mirrored `fort.33`-`fort.35`, the mirrored `fort.1`,
-   `b2fstati` and `fort.13`. The surface and source physics are not certified by these tools: audit them separately.
+7. Make the symmetric case runnable. `b2run b2mn` rebuilds any base file (`b2fgmtry`, `fort.30`, `b2fpardf`, `b2fstati`,
+   `b2frates`) that is **older than the files it is made from** (see `runs/Makefile`), and if it cannot it stops with
+   `No rule to make target 'b2ai.dat'` or similar, or, worse, it replaces your symmetric state by a flat one. So do the following **in
+   this order**. The base files live in `runs/<your case>/baserun`; the run directory is a sibling, `runs/<your case>/<run>`.
+
+   a. Put the symmetric files into `baserun` (you are in `baserun` already; `new/` is a subdirectory of it):
+
+          cp new/b2ag.dat b2ag.dat
+          cp new/<name of your .geo file> .
+          cp new/mesh/fort.33 new/mesh/fort.34 new/mesh/fort.35 .
+
+      Keep your original `b2ah.dat`, `b2ai.dat`, `b2ar.dat` and `b2frates` there. Do not copy `new/b2fgmtry` or `new/fort.30`; they
+      are regenerated next.
+
+   b. Regenerate the grid files from the symmetric inputs, in this order, each in `baserun`:
+
+          b2run b2ag      # makes b2fgmtry and fort.30. It must say "Writing fort.30 ... to match ../fort.33 format"; if it says
+                          # "Failed opening fort.33" the mirrored fort.33-35 are not in baserun
+          b2run b2ah      # makes b2fpardf from b2ah.dat and the new b2fgmtry
+          b2run b2ai      # makes a flat b2fstati in baserun (replacing any there; your own state is in old/ and new/); it is not your
+                          # starting state, but make needs the file to exist
+
+   c. `b2frates` (the atomic rates, made from ADAS data) is now older than the new `b2fpardf`, so `b2run b2mn` would try to remake
+      it with `b2ar`. Either keep your original `b2frates` (right if the species set is unchanged) and let step d mark it as current,
+      or remake it with `b2run b2ar`, which needs the ADAS data in `modules/adas` of the SOLPS-ITER tree.
+
+   d. Put the timestamps of the base files in dependency order with the stock script, run from the directory that **contains**
+      `baserun` (it does `cd baserun`):
+
+          cd ..
+          correct_baserun_timestamps
+
+   e. In the run directory (`runs/<your case>/<run>`) put the usual inputs (`b2mn.dat`, the `b2*.parameters` files,
+      `user_data.input`, the JSON input files if your original run directory has them), the mirrored `fort.1` (`cp
+      ../baserun/new/fort.1 fort.1`) and, **last**, the symmetric state:
+
+          cp ../baserun/new/b2fstati b2fstati
+
+      It must be newer than every base file of step d (if you copy it earlier, the timestamp script makes it older: copy it after).
+
+   f. Check before submitting. This lists what `b2run b2mn` would rebuild; there must be no `b2ag.exe`, `b2ah.exe`, `b2ai.exe` or
+      `b2ar.exe` line:
+
+          gmake -n -f $SOLPSTOP/runs/Makefile b2mn.prt | grep "b2a[ghir].exe"
+
+      A `b2ai.exe` line means the run-directory `b2fstati` is older than a base file (copy it again); a `b2ar.exe` line means
+      `b2frates` is older than `b2fpardf` (repeat step d).
+
+   The surface and source physics are not certified by these tools: audit them separately. How to submit and which settings to use
+   are in the user guide of the branch (`stepspeedup_user_guide.md`, section 4).
 
 ## Settings added by this branch (b2ag.dat and b2mn.dat)
 
